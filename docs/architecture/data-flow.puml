@@ -1,0 +1,18 @@
+@startuml
+title "Sensor Data Flow"
+
+actor User
+participant "Web UI" as ui
+participant "API Service" as api
+participant "MQTT Broker" as mqtt
+database "PostgreSQL" as db
+queue "Redis" as redis
+
+User -> ui : Interacts
+ui -> api : HTTP Request
+api -> db : Query
+api -> redis : Cache
+mqtt -> api : Telemetry
+api -> ui : Server Events
+ui -> User : Visualization
+@enduml

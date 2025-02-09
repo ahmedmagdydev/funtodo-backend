@@ -1,0 +1,26 @@
+@startuml
+' Use official AWS icon repository
+!includeurl https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v16.0/AWSCommon.puml
+!includeurl https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v16.0/Compute/EC2.puml
+!includeurl https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v16.0/NetworkContentDelivery/VPC.puml
+
+AWSVPC(vpc, "Primary VPC", "10.0.0.0/16") {
+  EC2(workers, "EKS Worker Nodes", "t3.large", "Auto Scaling Group")
+  DatabaseRDS(rds, "PostgreSQL", "HA Cluster")
+  DatabaseElastiCache(redis, "Redis", "Cluster Mode")
+}
+
+CloudFront(cdn, "CDN Distribution", "TLS 1.3")
+S3(assets, "Static Assets", "Versioned Bucket")
+
+component "Frontend" <<React>> #LightBlue
+component "API Service" <<Node.js>> #Gold
+component "MQTT Broker" <<Mosquitto>> #LightGreen
+
+cdn --> assets : Cache
+workers --> Frontend : Hosts Pods
+workers --> API_Service : Hosts Pods
+Frontend --> API_Service : REST API
+API_Service --> rds : Connection Pool
+API_Service --> redis : Pub/Sub
+@enduml

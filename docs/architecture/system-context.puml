@@ -1,0 +1,26 @@
+@startuml
+!include <awslib/AWSCommon>
+!include <awslib/Compute/EC2>
+
+actor "End User" as user
+rectangle "Sensor Hardware" {
+  component "IoT Sensor" <<Device>>
+}
+
+rectangle "Cloud Infrastructure" {
+  AWS_EC2(EKS_Cluster, "EKS Cluster")
+  AWS_Database(RDS_PostgreSQL, "RDS PostgreSQL")
+  AWS_Database(ElastiCache_Redis, "Redis")
+}
+
+rectangle "Web Application" {
+  component "Frontend" <<React>>
+  component "API Service" <<Node.js>>
+}
+
+user --> Frontend : HTTPS
+Frontend --> API_Service : REST API
+API_Service --> RDS_PostgreSQL : SQL
+API_Service --> ElastiCache_Redis : Cache
+IoT_Sensor --> EKS_Cluster : MQTT over TLS
+@enduml

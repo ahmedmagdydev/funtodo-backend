@@ -1,0 +1,36 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@stripe/stripe-js": "^5.6.0",
+    "aedes": "^0.51.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "google-auth-library": "^9.15.1",
+    "jsonwebtoken": "^9.0.2",
+    "mqtt": "^5.10.3",
+    "passport": "^0.7.0",
+    "passport-google-oauth2": "^0.2.0",
+    "pg": "^8.13.1",
+    "redis": "^4.7.0",
+    "websocket-stream": "^5.5.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^5.10.0",
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+.env
+dist/
+.DS_Store
+.windsurfrules
+scratchpad.md
+package-lock.json
+yarn-lock
+.angular.md
+migrations/
