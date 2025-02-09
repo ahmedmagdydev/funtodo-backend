@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth2").Strategy;
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 /**
  * Generate a random salt for password hashing
@@ -39,32 +40,41 @@ async function verifyPassword(password, hash, salt) {
   const hashedPassword = await hashPassword(password, salt);
   return hashedPassword === hash;
 }
-
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3001",
-      passReqToCallback: true,
-    },
-    function (request, accessToken, refreshToken, profile, done) {
-      console.log("🚀 ~ profile:", profile);
-      return done(null, profile);
-    }
-  )
-);
-
-passport.serializeUser(function (user, done) {
-  done(null, user);
+const transporter = nodemailer.createTransport({
+  host: "smtp.ethereal.email",
+  port: 587,
+  auth: {
+    user: "johnnie.heidenreich59@ethereal.email",
+    pass: "88jbNpskBna8FJSQXq",
+  },
 });
 
-passport.deserializeUser(function (user, done) {
-  done(null, user);
-});
+const sendEmail = async (mail, activationToken) => {
+  // send mail with defined transport object
+  const info = await transporter.sendMail({
+    from: '"FunTodo 👻" <maddison53@ethereal.email>', // sender address
+    to: mail, // list of receivers
+    subject: "Activate your Funtodo account", // Subject line
+    text: "Hi there,", // plain text body
+    html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4CAF50;">Welcome to FunTodo!</h2>
+        <p>Hi there,</p>
+        <p>Thank you for signing up for FunTodo. We're excited to have you on board!</p>
+        <p>To activate your account and start using FunTodo, please click the button below:</p>
+        <p style="text-align: center;">
+            <a href="https://funtodo-iot.netlify.app/verify-email?token=${activationToken}" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 4px; font-size: 16px;">Activate Your Account</a>
+        </p>
+        <p>This activation link will expire in 24 hours. If you didn't sign up for a FunTodo account, you can safely ignore this email.</p>
+        <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+        <p>Best regards,<br>The FunTodo Team</p>
+    </div>
+    `, // html body
+  });
+
+  console.log("Message sent: %s", info.messageId);
+  // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+};
 
 const verifyToken = (token) => {
   return new Promise((resolve, reject) => {
@@ -79,4 +89,5 @@ module.exports = {
   hashPassword,
   verifyPassword,
   verifyToken,
+  sendEmail,
 };

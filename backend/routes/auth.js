@@ -1,13 +1,83 @@
 const express = require("express");
 const { pool } = require("../db/pool");
-const { generateSalt, hashPassword, verifyPassword } = require("../utils/auth");
-const { verifyToken } = require("../utils/jwt");
+const {
+  generateSalt,
+  hashPassword,
+  verifyPassword,
+  sendEmail,
+} = require("../utils/auth");
+
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { OAuth2Client } = require("google-auth-library");
 const dotenv = require("dotenv");
 
 dotenv.config();
+
+/**
+ * @route GET /api/auth/verify
+ * @description Verify user's email using the verification token
+ * @access Public
+ */
+router.get("/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token is required",
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { email } = decoded;
+
+    // Find user by email and check verification token
+    const user = await pool.query(
+      "SELECT id, verification_token FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.rows[0].verification_token !== token) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification token",
+      });
+    }
+
+    // Activate user account
+    await pool.query(
+      "UPDATE users SET active = true, verification_token = NULL WHERE id = $1",
+      [user.rows[0].id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verification successful. Your account is now active.",
+    });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Verification link has expired",
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Email verification failed",
+    });
+  }
+});
 
 /**
  * @route POST /api/auth/register
@@ -48,20 +118,29 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Generate salt and hash password
+    // Hash password
     const salt = generateSalt();
     const hashedPassword = await hashPassword(password, salt);
+    console.log("🚀 ~ router.post ~ hashedPassword:", hashedPassword);
 
-    // Insert new user
-    const result = await pool.query(
-      "INSERT INTO users (email, password, salt, tier) VALUES ($1, $2, $3, $4) RETURNING id, email, tier, active, created_at",
-      [email, hashedPassword, salt, "free"]
+    // Generate verification token
+    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+
+    // Create user with inactive status
+    const newUser = await pool.query(
+      "INSERT INTO users (email, password, salt, active, verification_token) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      [email, hashedPassword, salt, false, verificationToken]
     );
 
-    res.status(201).json({
+    // Send verification email
+    await sendEmail(email, verificationToken);
+
+    return res.status(201).json({
       success: true,
-      message: "Registration successful",
-      data: result.rows[0],
+      message:
+        "Registration successful. Please check your email to verify your account.",
     });
   } catch (error) {
     console.error("Error registering user:", error);
@@ -109,7 +188,8 @@ router.post("/login", async (req, res) => {
     if (!user.active) {
       return res.status(401).json({
         success: false,
-        message: "Account is deactivated",
+        message:
+          "Account is deactivated, check your email for a verification link",
       });
     }
 
@@ -160,6 +240,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/send-email", async (req, res) => {
+  try {
+    await sendEmail(
+      "ahmed.magdy.dev@gmail.com",
+      "Z6nbK3Vzci1jdWs4amF0dW1waHM3M2JiZHI3MJW-k-TwjK_6PD6hXjKA12Ok0bKLnwjZ5Qss71PfoIjm"
+    );
+    res.status(200).json({ message: "Email sent" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error sending email", error });
+  }
+});
 const oAuth2Client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
