@@ -14,7 +14,7 @@ const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
 });
 client.on("connect", () => {
   console.log("Connected to MQTT broker");
-  client.subscribe("msa/#");
+  client.subscribe("11/#");
 });
 setInterval(() => {
   // Create sensor data objects with proper formatting
@@ -31,13 +31,13 @@ setInterval(() => {
   };
 
   // Convert objects to JSON strings before publishing
-  client.publish("msa/client1/temperature", JSON.stringify(temperature));
-  client.publish("msa/client1/humidity", JSON.stringify(humidity));
-  client.publish("msa/client2/pressure", JSON.stringify(pressure));
+  client.publish("11/client1/temperature", JSON.stringify(temperature));
+  client.publish("11/client1/humidity", JSON.stringify(humidity));
+  client.publish("11/client2/pressure", JSON.stringify(pressure));
 }, 4000);
 setTimeout(() => {
   client.publish(
-    "msa/client3/pressure",
+    "11/client3/pressure",
     JSON.stringify({
       value: Math.random() * 100,
     })
