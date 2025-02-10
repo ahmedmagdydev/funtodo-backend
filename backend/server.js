@@ -49,7 +49,13 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 function broadcast(data) {
+  console.log("🚀 ~ wss.clients.forEach ~ WebSocket.OPEN:", WebSocket.OPEN);
+
   wss.clients.forEach((client) => {
+    console.log(
+      "🚀 ~ wss.clients.forEach ~ client.readyState:",
+      client.readyState
+    );
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
