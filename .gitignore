@@ -2,9 +2,12 @@ node_modules/
 .env
 dist/
 .DS_Store
-.windsurfrules
-scratchpad.md
+# .windsurfrules
+# scratchpad.md
 package-lock.json
 yarn-lock
 .angular.md
 migrations/
+*.log
+backend/logs/combined.log
+backend/logs/error.log

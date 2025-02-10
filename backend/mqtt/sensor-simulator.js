@@ -1,7 +1,7 @@
 const mqtt = require("mqtt");
 const dotenv = require("dotenv");
 dotenv.config();
-``;
+
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
 
 const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
