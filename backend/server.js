@@ -1,24 +1,67 @@
 const express = require("express");
-const { createServer } = require("http");
+
 const cors = require("cors");
-// const { Broker } = require("./mqtt/broker");
+
 const { pool } = require("./db/pool");
 const dotenv = require("dotenv");
-const ws = require("websocket-stream");
+dotenv.config();
 const path = require("path");
-const aedes = require("aedes")();
+
+const WebSocket = require("ws");
+
+const mqtt = require("mqtt");
+// const client = mqtt.connect("mqtt://localhost:1883");
+const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
+const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  username: process.env.MQTT_USERNAME,
+  password: process.env.MQTT_SECRET_KEY,
+  reconnectPeriod: 1000,
+});
+client.on("connect", () => {
+  console.log("Connected to MQTT broker");
+  client.subscribe("msa/#");
+});
+
+// Create a WebSocket server on port 8080
+const server = new WebSocket.Server({ port: 8080 }, () => {
+  console.log("WebSocket server is running on ws://localhost:8080");
+});
+
+server.on("connection", (ws) => {
+  console.log("Client connected");
+  // Send an initial welcome message to the client upon connection
+
+  client.on("message", (topic, message) => {
+    // message is Buffer
+    console.log("Received message:", topic, message.toString());
+    ws.send(JSON.stringify({ type: topic, message: message.toString() }));
+    // client.end();
+  });
+
+  // When the client disconnects, the 'close' event is triggered
+  ws.on("close", () => {
+    console.log("Client disconnected");
+    ws.send("disconnect");
+    // client.end();
+    triggerBackendEvent();
+  });
+});
+
+// This function represents the backend event that you want to trigger
+function triggerBackendEvent() {
+  // Your backend logic here. For example:
+  // client.end();
+
+  console.log("Backend event triggered due to client disconnect");
+  // You could perform actions like updating a database, sending notifications, etc.
+}
 
 // Load environment variables
-dotenv.config();
 
 const app = express();
-const httpServer = createServer(app);
-
-// Initialize MQTT broker
-// const mqttBroker = new Broker();
-// mqttBroker.attachToServer(httpServer);
-ws.createServer({ server: httpServer }, aedes.handle);
-// Initialize WebSocket handler
 
 // Core middleware setup
 app.use(
@@ -33,9 +76,6 @@ app.use(
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/auth", require("./routes/auth"));
-// app.use('/api/users', require('./routes/users'));
-// app.use('/api', require('./middleware/auth'));
-// app.use('/stripe', require('./routes/stripe'));
 
 // Add health check endpoint
 app.get("/health", async (req, res) => {
@@ -55,8 +95,6 @@ app.get("/health", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`HTTP server running on port ${PORT}`);
-  console.log(`WebSocket server is available at ws://localhost:${PORT}`);
-  console.log(`Dashboard available at http://localhost:${PORT}`);
 });
