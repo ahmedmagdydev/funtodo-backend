@@ -27,7 +27,9 @@ client.on("connect", () => {
 
 // Create a WebSocket server on port 8080
 const server = new WebSocket.Server({ port: 8080 }, () => {
-  console.log("WebSocket server is running on ws://localhost:8080");
+  console.log(
+    `WebSocket server is running on ws://${process.env.HOSTNAME}:8080`
+  );
 });
 
 server.on("connection", (ws) => {
@@ -86,7 +88,6 @@ app.get("/health", async (req, res) => {
       db: "connected",
       mqtt: {
         tcp: true, // TCP server is always started
-        ws: httpServer.listening, // WebSocket server status
       },
     });
   } catch (err) {

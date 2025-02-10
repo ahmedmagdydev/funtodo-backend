@@ -18,6 +18,6 @@ wss.on("connection", (ws) => {
   ws.send("Hello from WebSocket server");
 });
 
-server.listen(8080, () => {
+server.listen(3001, () => {
   console.log("Server is listening on port 8080");
 });
