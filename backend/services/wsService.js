@@ -4,6 +4,7 @@ const config = require("../config/app");
 const logger = require("../utils/logger");
 const MqttService = require("./mqttService");
 const eventService = require("./eventService");
+const { WebSocketRateLimiter } = require("../middleware/rateLimiter");
 
 class WebSocketService {
   constructor() {
@@ -24,6 +25,7 @@ class WebSocketService {
 
   handleConnection(ws) {
     logger.info("New client connected");
+    ws.id = Date.now().toString(); // Add unique ID for rate limiting
 
     // Authentication handler
     ws.once("message", (rawMessage) =>
@@ -34,6 +36,10 @@ class WebSocketService {
   }
 
   async handleAuthentication(ws, rawMessage) {
+    console.log(
+      "🚀 ~ WebSocketService ~ handleAuthentication ~ rawMessage:",
+      rawMessage
+    );
     try {
       const message = JSON.parse(rawMessage);
       const { token } = message;
@@ -60,6 +66,18 @@ class WebSocketService {
   }
 
   async handleMessage(ws, rawMessage) {
+    // Check rate limit
+    if (WebSocketRateLimiter.isRateLimited(ws.id)) {
+      ws.send(
+        JSON.stringify({
+          status: "error",
+          message:
+            "Rate limit exceeded. Please wait before sending more messages.",
+        })
+      );
+      return;
+    }
+
     try {
       const message = JSON.parse(rawMessage);
       const { action, sensor } = message;

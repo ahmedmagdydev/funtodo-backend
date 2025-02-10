@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { authLimiter } = require("../middleware/rateLimiter");
 const AuthController = require("../controllers/authController");
 const GoogleAuthController = require("../controllers/googleAuthController");
 const {
@@ -12,7 +13,7 @@ const {
  * @description Verify user's email using the verification token
  * @access Public
  */
-router.get("/verify", AuthController.verifyEmail);
+router.use(authLimiter);
 
 /**
  * @route POST /api/auth/register
@@ -27,6 +28,13 @@ router.post("/register", validateRegistration, AuthController.register);
  * @access Public
  */
 router.post("/login", validateLogin, AuthController.login);
+
+/**
+ * @route GET /api/auth/verify
+ * @description Verify user's email using the verification token
+ * @access Public
+ */
+router.get("/verify", AuthController.verifyEmail);
 
 /**
  * @route POST /api/auth/google

@@ -27,74 +27,30 @@ Note: Custom close codes should be in range 3000-4999 to be valid according to t
 
 # Scratchpad
 
-## Current Task: Code Refactoring
-
-### Objective
-Refactor the authentication and server code following Node.js and backend MVC best practices for better readability and maintainability.
+## Current Task: Implement Rate Limiting
 
 ### Progress
+[X] Create rate limiter middleware
+[X] Implement HTTP API rate limiting
+[X] Implement stricter auth route rate limiting
+[X] Implement WebSocket rate limiting
+[X] Add logging for rate limit events
 
-#### Authentication Refactoring
-[X] Split auth.js into separate components
-[X] Create user model for database operations
-[X] Implement email service
-[X] Add Google authentication service
-[X] Add input validation middleware
-[X] Update routes to use controllers
+### Implementation Details
+1. **HTTP API Rate Limiting**:
+   - General API: 100 requests per 15 minutes per IP
+   - Auth endpoints: 5 attempts per hour per IP
+   - Uses express-rate-limit package
 
-#### Server.js Refactoring
-[X] Create configuration management
-[X] Separate WebSocket logic into service
-[X] Separate MQTT logic into service
-[X] Add error handling middleware
-[X] Add logging service
-[X] Create health check controller and route
-[X] Clean up server.js to be minimal and focused
-
-### Lessons Learned
-- When refactoring large files, break them down by responsibility (MVC pattern)
-- Use services for external integrations (MQTT, WebSocket, Email)
-- Centralize configuration in a dedicated config file
-- Implement proper logging for better debugging
-- Use middleware for common operations like validation and error handling
-- Keep the main server file clean and focused on app setup
-- Use singleton pattern for services that need to maintain state
-- Handle cleanup of resources in WebSocket and MQTT connections
-
-### Project Structure
-```
-backend/
-├── config/
-│   └── app.js           # Configuration management
-├── controllers/
-│   ├── authController.js       # User authentication
-│   ├── googleAuthController.js # Google OAuth
-│   └── healthController.js     # Health checks
-├── models/
-│   └── userModel.js     # User database operations
-├── services/
-│   ├── emailService.js  # Email operations
-│   ├── googleService.js # Google API
-│   ├── mqttService.js   # MQTT client management
-│   └── wsService.js     # WebSocket handling
-├── middleware/
-│   ├── validation.js    # Input validation
-│   └── errorHandler.js  # Error handling
-├── utils/
-│   └── logger.js        # Logging service
-└── routes/
-    ├── auth.js          # Auth routes
-    └── health.js        # Health check route
-```
+2. **WebSocket Rate Limiting**:
+   - 10 messages per second per client
+   - 1-minute block on exceeding limit
+   - Custom implementation using Map
 
 ### Next Steps
-[ ] Add comprehensive error handling
-[ ] Implement request validation for all routes
-[ ] Add request logging middleware
+[ ] Add security headers
 [ ] Set up automated testing
 [ ] Add API documentation
-[ ] Implement rate limiting
-[ ] Add security headers
 
 ## WebSocket Close Codes Reference
 

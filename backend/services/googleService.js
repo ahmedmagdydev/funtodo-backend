@@ -7,19 +7,20 @@ dotenv.config();
 const oAuth2Client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
+  "postmessage"
 );
 
 class GoogleService {
   static async getUserInfo(accessToken) {
+    console.log("🚀 ~ GoogleService ~ getUserInfo ~ accessToken:", accessToken);
     try {
       const { tokens } = await oAuth2Client.getToken(accessToken);
       oAuth2Client.setCredentials(tokens);
-      const oauth2 = google.oauth2({ version: 'v2', auth: oAuth2Client });
+      const oauth2 = google.oauth2({ version: "v2", auth: oAuth2Client });
       const { data } = await oauth2.userinfo.get();
       return data;
     } catch (error) {
-      console.error('Error getting Google user info:', error);
+      console.error("Error getting Google user info:", error);
       throw error;
     }
   }

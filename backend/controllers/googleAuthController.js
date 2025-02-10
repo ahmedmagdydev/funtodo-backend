@@ -8,19 +8,21 @@ class GoogleAuthController {
   static async authenticate(req, res) {
     try {
       // Get user info from Google
-      const googleUserInfo = await GoogleService.getUserInfo(req.body.access_token);
-      
+      const googleUserInfo = await GoogleService.getUserInfo(
+        req.body.access_token
+      );
+
       // Check if user exists
       let user = await UserModel.findByEmail(googleUserInfo.email);
-      
+
       if (!user) {
         // Generate random password and salt for Google users
         const salt = generateSalt();
         const hashedPassword = await hashPassword(
-          'google-oauth-' + crypto.randomBytes(16).toString('hex'),
+          "google-oauth-" + crypto.randomBytes(16).toString("hex"),
           salt
         );
-        
+
         // Create new user
         user = await UserModel.create({
           email: googleUserInfo.email,
@@ -38,7 +40,7 @@ class GoogleAuthController {
       if (!user.active) {
         return res.status(403).json({
           success: false,
-          error: 'Account is not active. Please verify your email.'
+          error: "Account is not active. Please verify your email.",
         });
       }
 
@@ -46,7 +48,7 @@ class GoogleAuthController {
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: "24h" }
       );
 
       res.json({
@@ -56,14 +58,14 @@ class GoogleAuthController {
           id: user.id,
           email: user.email,
           tier: user.tier,
-          active: user.active
-        }
+          active: user.active,
+        },
       });
     } catch (error) {
-      console.error('Google authentication error:', error);
+      console.error("Google authentication error:", error);
       res.status(500).json({
         success: false,
-        error: 'Authentication failed'
+        error: "Authentication failed",
       });
     }
   }
