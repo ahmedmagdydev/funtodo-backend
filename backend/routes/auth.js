@@ -11,6 +11,8 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { OAuth2Client } = require("google-auth-library");
 const dotenv = require("dotenv");
+const { google } = require("googleapis");
+const crypto = require("crypto");
 
 dotenv.config();
 
@@ -260,13 +262,73 @@ const oAuth2Client = new OAuth2Client(
 
 router.post(
   "/google",
-  // passport.authenticate("google-token", { session: false }),
   async (req, res) => {
-    console.log("🚀 ~ req.body.code:", req.body.access_token);
-    const { tokens } = await oAuth2Client.getToken(req.body.access_token); // exchange code for tokens
-    console.log(tokens);
+    try {
+      // Exchange code for tokens
+      const { tokens } = await oAuth2Client.getToken(req.body.access_token);
+      
+      // Get user info from Google
+      oAuth2Client.setCredentials(tokens);
+      const oauth2 = google.oauth2({ version: 'v2', auth: oAuth2Client });
+      const { data } = await oauth2.userinfo.get();
+      
+      // Check if user exists
+      const userResult = await pool.query(
+        'SELECT * FROM users WHERE email = $1',
+        [data.email]
+      );
+      
+      let user;
+      if (userResult.rows.length === 0) {
+        // Generate random password and salt for Google users
+        const salt = generateSalt();
+        const hashedPassword = await hashPassword('google-oauth-' + crypto.randomBytes(16).toString('hex'), salt);
+        
+        // Create new user if doesn't exist
+        const newUserResult = await pool.query(
+          'INSERT INTO users (email, password, salt, active, verification_token) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+          [data.email, hashedPassword, salt, data.verified_email, null]
+        );
+        user = newUserResult.rows[0];
+      } else {
+        user = userResult.rows[0];
+        // Update user active status if email is verified
+        if (data.verified_email && !user.active) {
+          await pool.query(
+            'UPDATE users SET active = true, verification_token = null WHERE id = $1',
+            [user.id]
+          );
+          user.active = true;
+        }
+      }
 
-    res.json(tokens);
+      // Only allow login if user is active
+      if (!user.active) {
+        return res.status(403).json({
+          error: 'Account is not active. Please verify your email.'
+        });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          tier: user.tier,
+          active: user.active
+        }
+      });
+    } catch (error) {
+      console.error('Google authentication error:', error);
+      res.status(500).json({ error: 'Authentication failed' });
+    }
   }
 );
 
