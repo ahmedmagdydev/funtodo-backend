@@ -7,7 +7,7 @@ dist/
 package-lock.json
 yarn-lock
 .angular.md
-migrations/
+# migrations/
 *.log
 backend/logs/combined.log
 backend/logs/error.log

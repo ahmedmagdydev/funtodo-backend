@@ -31,7 +31,8 @@
     "redis": "^4.7.0",
     "websocket-stream": "^5.5.2",
     "winston": "^3.17.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "node-pg-migrate": "^5.10.0",

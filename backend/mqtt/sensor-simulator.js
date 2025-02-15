@@ -1,15 +1,16 @@
 const mqtt = require("mqtt");
 const dotenv = require("dotenv");
+const config = require("../config/app");
 dotenv.config();
 
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
 
-const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
+const client = mqtt.connect(config.mqtt.url, {
   clientId,
   clean: true,
   connectTimeout: 4000,
-  username: process.env.MQTT_USERNAME,
-  password: process.env.MQTT_SECRET_KEY,
+  username: config.mqtt.username,
+  password: config.mqtt.password,
   reconnectPeriod: 1000,
 });
 client.on("connect", () => {
@@ -17,27 +18,54 @@ client.on("connect", () => {
   client.subscribe("13/#");
 });
 setInterval(() => {
-  // Create sensor data objects with proper formatting
-  const temperature = {
-    value: Math.random() * 100,
-  };
+  const client1Sensors = [
+    "spg4x",
+    "sht40",
+    "pressure",
+    "bem680",
+    "bmm150",
+    "tsl2591",
+    "scd4x",
+    "veml770",
+    "shtc3",
+    "sht20",
+    "sl7021",
+    "bmp280",
+  ];
 
-  const humidity = {
-    value: Math.random() * 100,
-  };
+  const client2Sensors = [
+    "spg4x",
+    "sht40",
+    "pressure",
+    "bem680",
+    "bmm150",
+    "tsl2591",
+    "scd4x",
+    "veml770",
+  ];
 
-  const pressure = {
-    value: Math.random() * 100,
-  };
+  // Generate and publish data for client1 sensors
+  client1Sensors.forEach((sensor) => {
+    const data = [
+      { type: "t", value: Math.random() * 100 },
+      { type: "h", value: Math.random() * 100 },
+      { type: "atm", value: Math.random() * 100 },
+    ];
+    client.publish(`13/client1/${sensor}`, JSON.stringify(data));
+  });
 
-  // Convert objects to JSON strings before publishing
-  client.publish("13/client1/temperature", JSON.stringify(temperature));
-  client.publish("13/client1/humidity", JSON.stringify(humidity));
-  client.publish("13/client2/pressure", JSON.stringify(pressure));
-}, 4000);
+  // Generate and publish data for client2 sensors
+  client2Sensors.forEach((sensor) => {
+    const data = [
+      { type: "t", value: Math.random() * 100 },
+      { type: "h", value: Math.random() * 100 },
+    ];
+    client.publish(`13/client2/${sensor}`, JSON.stringify(data));
+  });
+}, 5000);
 setTimeout(() => {
   client.publish(
-    "13/client3/pressure",
+    "13/client1/pressure",
     JSON.stringify({
       value: Math.random() * 100,
     })

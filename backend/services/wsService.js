@@ -17,6 +17,7 @@ class WebSocketService {
 
     // Listen for MQTT messages
     eventService.on(eventService.EVENTS.MQTT_MESSAGE, (username, data) => {
+      console.log("🚀 ~ WebSocketService ~ eventService.on ~ data:", data);
       this.sendToUser(username, data);
     });
 

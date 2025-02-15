@@ -14,6 +14,8 @@ class MqttService {
       clean: true,
       username: config.mqtt.username,
       password: config.mqtt.password,
+      reconnectPeriod: 1000,
+      connectTimeout: 4000,
     });
 
     client.on("connect", () => {
@@ -28,14 +30,24 @@ class MqttService {
     client.on("message", (topic, message) => {
       try {
         const messageData = {
-          type: topic,
-          message: message.toString(),
+          topic: topic,
+          values: message.toString(),
         };
         // Emit the message event
-        eventService.emit(eventService.EVENTS.MQTT_MESSAGE, username, messageData);
-        logger.debug(`MQTT message received for user ${username}:`, messageData);
+        eventService.emit(
+          eventService.EVENTS.MQTT_MESSAGE,
+          username,
+          messageData
+        );
+        logger.debug(
+          `MQTT message received for user ${username}:`,
+          messageData
+        );
       } catch (error) {
-        logger.error(`Error handling MQTT message for user ${username}:`, error);
+        logger.error(
+          `Error handling MQTT message for user ${username}:`,
+          error
+        );
       }
     });
 
@@ -48,7 +60,7 @@ class MqttService {
     }
 
     const client = this.userMqttClients.get(username);
-    
+
     return new Promise((resolve, reject) => {
       client.subscribe(topic, (error) => {
         if (error) {
